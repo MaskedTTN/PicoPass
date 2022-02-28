@@ -10,7 +10,6 @@ from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 import busio
 from adafruit_display_text import label
-#from adafruit_st7789 import ST7789
 import adafruit_st7789
 
 print("=====================================================")
@@ -26,7 +25,7 @@ print("Hello Raspberry Pi Pico/CircuitPython PICOPASS")
 print(adafruit_st7789.__name__ + " version: " + adafruit_st7789.__version__)
 print()
 
-data = [{"Name": "GitHub", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "othacc", "Username" : 'ghuser', "password" : "it works!"}]
+data = [{"Name": "GitHub", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "othacc", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "Discord", "Username" : 'ghuser', "password" : "it works!"}]
 pin = "ABXY"
 progress = ""
 proposed_pin = ""
@@ -55,10 +54,7 @@ spi_clk = board.GP18
 
 spi = busio.SPI(spi_clk, MOSI=spi_mosi)
 
-#display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs, reset=tft_res)
 display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs)
-#I get the parameters by guessing and trying
-#display = ST7789(display_bus, width=135, height=240, rowstart=40, colstart=53)
 display = adafruit_st7789.ST7789(display_bus,
                     width=135, height=240,
                     rowstart=40, colstart=53)
@@ -82,61 +78,79 @@ clear()
 def menu():
     position = 0
     clear()
-    #print("menu starting")
-    while True:
-        #print(position)
-        clear()
-        if position > 0:
+    if position > 0:
             text_group3 = displayio.Group(scale=4, x=0, y=20)
             text_area3 = label.Label(terminalio.FONT, text="<", color=0xFFFFFF)
-            text_group3.append(text_area3)  # Subgroup for text scaling
+            text_group3.append(text_area3)
             splash.append(text_group3)
 
-        if  position < (len(data) - 1):
+    if  position < (len(data) - 1):
             text_group4 = displayio.Group(scale=4, x=220, y=20)
             text_area4 = label.Label(terminalio.FONT, text=">", color=0xFFFFFF)
-            text_group4.append(text_area4)  # Subgroup for text scaling
+            text_group4.append(text_area4)
             splash.append(text_group4)
+    
+    text_group5 = displayio.Group(scale=3, x=205, y=100)
+    text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
+    text_group5.append(text_area5)
+    splash.append(text_group5)
+    
+    text_group6 = displayio.Group(scale=4, x=50, y=20)
+    text_area6 = label.Label(terminalio.FONT, text=data[position]["Name"], color=0xFFFFFF)
+    text_group6.append(text_area6)
+    splash.append(text_group6)
+    
+    print(len(splash))
+    changed = False
+    while True:
+        if changed:
+            print(len(splash))
+            changed = False
+            splash.pop((len(splash) - 1))
+            splash.pop((len(splash) - 2))
+            splash.pop((len(splash) - 3))
+            if position > 0:
+                print(len(splash))
+                text_group3 = displayio.Group(scale=4, x=0, y=20)
+                text_area3 = label.Label(terminalio.FONT, text="<", color=0xFFFFFF)
+                text_group3.append(text_area3)
+                splash.append(text_group3)
 
-        text_group5 = displayio.Group(scale=3, x=205, y=100)
-        text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
-        text_group5.append(text_area5)  # Subgroup for text scaling
-        splash.append(text_group5)
+            if  position < (len(data) - 1):
+                print(len(splash))
+                text_group4 = displayio.Group(scale=4, x=220, y=20)
+                text_area4 = label.Label(terminalio.FONT, text=">", color=0xFFFFFF)
+                text_group4.append(text_area4)
+                splash.append(text_group4)
 
-        #display.text('<', 7, 0, 240, 4)
-        #display.text('>', 220, 0, 240, 4)
-        #display.text('OK',210, 100, 100, 3)
+            text_group5 = displayio.Group(scale=3, x=205, y=100)
+            text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
+            text_group5.append(text_area5)
+            splash.append(text_group5)
 
-        text_group6 = displayio.Group(scale=4, x=50, y=20)
-        text_area6 = label.Label(terminalio.FONT, text=data[position]["Name"], color=0xFFFFFF)
-        text_group6.append(text_area6)  # Subgroup for text scaling
-        splash.append(text_group6)
+            text_group6 = displayio.Group(scale=4, x=50, y=20)
+            text_area6 = label.Label(terminalio.FONT, text=data[position]["Name"], color=0xFFFFFF)
+            text_group6.append(text_area6)
+            splash.append(text_group6)
 
-        #display.text(data[position]["Name"], 0, 50, 240, 4)
-        #display.clear()
-        #display.update()
         if not buttonA.value:
             if position > 0:
-                #print('moving left')
+                changed = True
+                print('moving left')
                 position = position - 1
         if not buttonX.value:
             if  position < (len(data) - 1):
-                #print('moving right')
+                changed = True
+                print('moving right')
                 position = position + 1
         if not buttonY.value:
-            #print("typing")
             text_group5 = displayio.Group(scale=3, x=150, y=100)
             text_area5 = label.Label(terminalio.FONT, text="typing", color=0xFFFFFF)
-            text_group5.append(text_area5)  # Subgroup for text scaling
+            text_group5.append(text_area5)
             splash.append(text_group5)
             time.sleep(.2)
-            #print('typing...')
             layout.write(data[position]['password'])
-            #for char in range(0, len(data[position]['Username'])):
-            #    time.sleep(.2)
-            #    print('typing...')
-                #keyboard.send(keycodes(char))
-        time.sleep(.5)
+        time.sleep(.1)
 
 # Draw a smaller inner rectangle
 inner_bitmap = displayio.Bitmap(238, 133, 1)
@@ -150,11 +164,11 @@ splash.append(inner_sprite)
 text_group1 = displayio.Group(scale=3, x=20, y=15)
 text1 = "ENTER PIN:"
 text_area1 = label.Label(terminalio.FONT, text=text1, color=0xFF0000)
-text_group1.append(text_area1)  # Subgroup for text scaling
+text_group1.append(text_area1)
 # Draw a label
 text_group2 = displayio.Group(scale=5, x=60, y=50)
 text_area2 = label.Label(terminalio.FONT, text="____", color=0xFFFFFF)
-text_group2.append(text_area2)  # Subgroup for text scaling
+text_group2.append(text_area2)
 
 splash.append(text_group1)
 splash.append(text_group2)
@@ -163,45 +177,41 @@ while True:
     if len(proposed_pin) <= 3:
         if not buttonA.value:
             proposed_pin = proposed_pin + 'A'
-            #print('appended A to string')
             progress = progress + '*'
-            #display.text(progress, 90, 50, 240, 4)
+            print("updating")
             text_group2 = displayio.Group(scale=5, x=60, y=50)
             text_area2 = label.Label(terminalio.FONT, text=progress, color=0xFFFFFF)
             text_group2.append(text_area2)
             time.sleep(0.2)
             splash.append(text_group2)
-            #print(proposed_pin)
         if not buttonB.value:
             proposed_pin = proposed_pin + 'B'
-            #print('appended B to string')
             progress = progress + '*'
+            print("updating")
             text_group2 = displayio.Group(scale=5, x=60, y=50)
             text_area2 = label.Label(terminalio.FONT, text=progress, color=0xFFFFFF)
             text_group2.append(text_area2)
             time.sleep(0.2)
             splash.append(text_group2)
-            #print(proposed_pin)
+
         if not buttonX.value:
             proposed_pin = proposed_pin + 'X'
-            #print('appended X to string')
             progress = progress + '*'
+            print("updating")
             text_group2 = displayio.Group(scale=5, x=60, y=50)
             text_area2 = label.Label(terminalio.FONT, text=progress, color=0xFFFFFF)
             text_group2.append(text_area2)
             time.sleep(0.2)
             splash.append(text_group2)
-            #print(proposed_pin)
         if not buttonY.value:
             proposed_pin = proposed_pin + 'Y'
-            #print('appended Y to string')
             progress = progress + '*'
+            print("updating")
             text_group2 = displayio.Group(scale=5, x=60, y=50)
             text_area2 = label.Label(terminalio.FONT, text=progress, color=0xFFFFFF)
             text_group2.append(text_area2)
             time.sleep(0.2)
             splash.append(text_group2)
-            #print(proposed_pin)
 
     else:
         if proposed_pin == pin:
@@ -213,7 +223,6 @@ while True:
             splash.append(text_group1)
             time.sleep(1)
             menu()
-            #print("pin verified")
             break
         else:
             clear()
@@ -229,4 +238,3 @@ while True:
 
 
 time.sleep(3.0)
-
