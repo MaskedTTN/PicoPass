@@ -89,17 +89,17 @@ def menu():
             text_area4 = label.Label(terminalio.FONT, text=">", color=0xFFFFFF)
             text_group4.append(text_area4)
             splash.append(text_group4)
-    
+
     text_group5 = displayio.Group(scale=3, x=205, y=100)
     text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
     text_group5.append(text_area5)
     splash.append(text_group5)
-    
+
     text_group6 = displayio.Group(scale=4, x=50, y=20)
     text_area6 = label.Label(terminalio.FONT, text=data[position]["Name"], color=0xFFFFFF)
     text_group6.append(text_area6)
     splash.append(text_group6)
-    
+
     print(len(splash))
     changed = False
     while True:
@@ -144,12 +144,13 @@ def menu():
                 print('moving right')
                 position = position + 1
         if not buttonY.value:
-            text_group5 = displayio.Group(scale=3, x=150, y=100)
+            text_group5 = displayio.Group(scale=3, x=0, y=100)
             text_area5 = label.Label(terminalio.FONT, text="typing", color=0xFFFFFF)
             text_group5.append(text_area5)
             splash.append(text_group5)
             time.sleep(.2)
             layout.write(data[position]['password'])
+            splash.pop((len(splash) - 1))
         time.sleep(.1)
 
 # Draw a smaller inner rectangle
@@ -238,3 +239,4 @@ while True:
 
 
 time.sleep(3.0)
+
