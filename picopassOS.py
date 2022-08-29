@@ -6,6 +6,7 @@ from adafruit_hid.keycode import Keycode
 import displayio
 import terminalio
 from adafruit_display_text import label
+import adafruit_hashlib as hashlib
 
 
 
@@ -14,16 +15,13 @@ class picopass:
     print("made class")
     def __init__(self, display, buttonA, buttonB, buttonX, buttonY):
         """initialises picopass object"""
-        self.pin = "ABXY"
-        self.progress = ""
-        self.proposed_pin = ""
         self.buttonA = buttonA
         self.buttonB = buttonB
         self.buttonX = buttonX
         self.buttonY = buttonY
         self.display = display
         self.data = [{"Name": "GitHub", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "othacc", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "Discord", "Username" : 'ghuser', "password" : "it works!"}]
-        self.pin = "ABXY"
+        self.pin = 'f77f0ece0aa17656f081c581c06d2b216f5207570c69494f5c879659f03739bc'
         self.progress = ""
         self.proposed_pin = ""
 
@@ -102,7 +100,9 @@ class picopass:
                     self.display.append(text_group2)
 
             else:
-                if self.proposed_pin == self.pin:
+                m = hashlib.sha256()
+                m.update(self.proposed_pin)
+                if m.hexdigest() == self.pin:
                     self.clear(self.display)
                     text_group1 = displayio.Group(scale=3, x=20, y=15)
                     text1 = "PIN VERIFIED"
