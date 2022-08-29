@@ -7,8 +7,8 @@ and may not work as expected.
 
 TO-DO:
   - make picopass logo  [DONE!]
-  - add bootscreen [IN PROGRESS!]
-  - store master password using hash
+  - add bootscreen [DONE!]
+  - store master password using hash [IN PROGRESS!]
   - store password in seperate file preferable csv for easy migration from chrome
   - add encryption ... somehow
   - make python desktop app 
