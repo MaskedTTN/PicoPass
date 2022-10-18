@@ -93,14 +93,21 @@ group.append(text_group)
 # Add the Group to the Display
 splash.append(group)
 
-time.sleep(.5)
+time.sleep(.1)
 splash.pop()
 
 if (not buttonA.value) and (not buttonB.value):
     print("booting into configuration mode!")
+    try:
+        import config
+    except Exception as inst:
+        print(inst)
 else:
     print("booting into PicoPass!")
-    import picopassOS
-    picopassinstance = picopassOS.picopass(splash, buttonA, buttonB, buttonX, buttonY)
-    picopassinstance.lockscreen()
-    picopassinstance.menu()
+    try:
+        import picopassOS
+        picopassinstance = picopassOS.picopass(splash, buttonA, buttonB, buttonX, buttonY)
+        picopassinstance.lockscreen()
+        #picopassinstance.menu()
+    except Exception as inst:
+        print(inst)

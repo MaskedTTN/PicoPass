@@ -7,6 +7,7 @@ import displayio
 import terminalio
 from adafruit_display_text import label
 import adafruit_hashlib as hashlib
+import json
 
 
 
@@ -20,7 +21,10 @@ class picopass:
         self.buttonX = buttonX
         self.buttonY = buttonY
         self.display = display
-        self.data = [{"Name": "GitHub", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "othacc", "Username" : 'ghuser', "password" : "it works!"}, {"Name": "Discord", "Username" : 'ghuser', "password" : "it works!"}]
+        with open('config.json', 'r')as file:
+            self.data = json.load(file)
+            file.close()
+        print(type(self.data))
         self.pin = 'f77f0ece0aa17656f081c581c06d2b216f5207570c69494f5c879659f03739bc'
         self.progress = ""
         self.proposed_pin = ""
@@ -102,20 +106,25 @@ class picopass:
             else:
                 m = hashlib.sha256()
                 m.update(self.proposed_pin)
+                #print('hash: ', m.hexdigest())
+                #print('pin given: ', proposed_pin)
                 if m.hexdigest() == self.pin:
                     self.clear(self.display)
                     text_group1 = displayio.Group(scale=3, x=20, y=15)
                     text1 = "PIN VERIFIED"
+                    print('PIN VERIFIED')
                     text_area1 = label.Label(terminalio.FONT, text=text1, color=0xFF0000)
                     text_group1.append(text_area1)
                     self.display.append(text_group1)
                     time.sleep(1)
+                    self.display.pop((len(self.display) - 1))
                     self.menu()
                     break
                 else:
                     self.clear(self.display)
                     text_group1 = displayio.Group(scale=3, x=20, y=15)
                     text1 = "PIN DENIED"
+                    print('PIN DENIED')
                     text_area1 = label.Label(terminalio.FONT, text=text1, color=0xFF0000)
                     text_group1.append(text_area1)
                     time.sleep(1)
@@ -133,21 +142,26 @@ class picopass:
                 text_group3.append(text_area3)
                 self.display.append(text_group3)
 
-        if  position < (len(self.data) - 1):
+        if  position < (len(self.data['passwords']) - 1):
                 text_group4 = displayio.Group(scale=4, x=220, y=20)
                 text_area4 = label.Label(terminalio.FONT, text=">", color=0xFFFFFF)
                 text_group4.append(text_area4)
                 self.display.append(text_group4)
 
-        text_group5 = displayio.Group(scale=3, x=205, y=100)
-        text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
+        text_group5 = displayio.Group(scale=3, x=150, y=100)
+        text_area5 = label.Label(terminalio.FONT, text="PASSW", color=0xFFFFFF)
         text_group5.append(text_area5)
         self.display.append(text_group5)
 
         text_group6 = displayio.Group(scale=4, x=50, y=20)
-        text_area6 = label.Label(terminalio.FONT, text=self.data[position]["Name"], color=0xFFFFFF)
+        text_area6 = label.Label(terminalio.FONT, text=self.data['passwords'][position]["Name"], color=0xFFFFFF)
         text_group6.append(text_area6)
         self.display.append(text_group6)
+        
+        text_group7 = displayio.Group(scale=3, x=0, y=100)
+        text_area7 = label.Label(terminalio.FONT, text="USRN", color=0xFFFFFF)
+        text_group7.append(text_area7)
+        self.display.append(text_group7)
 
         print(len(self.display))
         changed = False
@@ -165,22 +179,27 @@ class picopass:
                     text_group3.append(text_area3)
                     self.display.append(text_group3)
 
-                if  position < (len(self.data) - 1):
+                if  position < (len(self.data['passwords']) - 1):
                     print(len(self.display))
                     text_group4 = displayio.Group(scale=4, x=220, y=20)
                     text_area4 = label.Label(terminalio.FONT, text=">", color=0xFFFFFF)
                     text_group4.append(text_area4)
                     self.display.append(text_group4)
 
-                text_group5 = displayio.Group(scale=3, x=205, y=100)
-                text_area5 = label.Label(terminalio.FONT, text="OK", color=0xFFFFFF)
+                text_group5 = displayio.Group(scale=3, x=150, y=100)
+                text_area5 = label.Label(terminalio.FONT, text="PASSW", color=0xFFFFFF)
                 text_group5.append(text_area5)
                 self.display.append(text_group5)
 
                 text_group6 = displayio.Group(scale=4, x=50, y=20)
-                text_area6 = label.Label(terminalio.FONT, text=self.data[position]["Name"], color=0xFFFFFF)
+                text_area6 = label.Label(terminalio.FONT, text=self.data['passwords'][position]["Name"], color=0xFFFFFF)
                 text_group6.append(text_area6)
                 self.display.append(text_group6)
+                
+                text_group7 = displayio.Group(scale=3, x=0, y=100)
+                text_area7 = label.Label(terminalio.FONT, text="USRN", color=0xFFFFFF)
+                text_group7.append(text_area7)
+                self.display.append(text_group7)
 
             if not self.buttonA.value:
                 if position > 0:
@@ -188,17 +207,25 @@ class picopass:
                     print('moving left')
                     position = position - 1
             if not self.buttonX.value:
-                if  position < (len(self.data) - 1):
+                if  position < (len(self.data['passwords']) - 1):
                     changed = True
                     print('moving right')
                     position = position + 1
             if not self.buttonY.value:
-                text_group5 = displayio.Group(scale=3, x=0, y=100)
+                text_group5 = displayio.Group(scale=3, x=80, y=55)
                 text_area5 = label.Label(terminalio.FONT, text="typing", color=0xFFFFFF)
                 text_group5.append(text_area5)
                 self.display.append(text_group5)
                 time.sleep(.2)
-                self.layout.write(self.data[position]['password'])
+                self.layout.write(self.data['passwords'][position]['password'])
+                self.display.pop((len(self.display) - 1))
+            if not self.buttonB.value:
+                text_group5 = displayio.Group(scale=3, x=80, y=55)
+                text_area5 = label.Label(terminalio.FONT, text="typing", color=0xFFFFFF)
+                text_group5.append(text_area5)
+                self.display.append(text_group5)
+                time.sleep(.2)
+                self.layout.write(self.data['passwords'][position]['Username'])
                 self.display.pop((len(self.display) - 1))
             time.sleep(.1)
         
