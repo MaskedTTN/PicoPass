@@ -1,108 +1,61 @@
-#include <string.h>
-#include <math.h>
-#include <vector>
-#include <cstdlib>
-
 #include "pico_display.hpp"
 #include "drivers/st7789/st7789.hpp"
 #include "libraries/pico_graphics/pico_graphics.hpp"
 #include "rgbled.hpp"
+#include "drivers/button/button.cpp"
 
 using namespace pimoroni;
 
+// Display driver
 ST7789 st7789(PicoDisplay::WIDTH, PicoDisplay::HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT));
+
+// Graphics library - in RGB332 mode you get 256 colours and optional dithering for ~32K RAM.
 PicoGraphics_PenRGB332 graphics(st7789.width, st7789.height, nullptr);
 
+// RGB LED
 RGBLED led(PicoDisplay::LED_R, PicoDisplay::LED_G, PicoDisplay::LED_B);
 
+// And each button
+Button button_a(PicoDisplay::A);
+Button button_b(PicoDisplay::B);
+Button button_x(PicoDisplay::X);
+Button button_y(PicoDisplay::Y);
 
 int main() {
-  st7789.set_backlight(100);
 
-  struct pt {
-    float      x;
-    float      y;
-    uint8_t    r;
-    float     dx;
-    float     dy;
-    uint16_t pen;
-  };
+    // set the backlight to a value between 0 and 255
+    // the backlight is driven via PWM and is gamma corrected by our
+    // library to give a gorgeous linear brightness range.
+    st7789.set_backlight(100);
 
-  std::vector<pt> shapes;
-  for(int i = 0; i < 100; i++) {
-    pt shape;
-    shape.x = rand() % 240;
-    shape.y = rand() % 135;
-    shape.r = (rand() % 10) + 3;
-    shape.dx = float(rand() % 255) / 128.0f;
-    shape.dy = float(rand() % 255) / 128.0f;
-    shape.pen = graphics.create_pen(rand() % 255, rand() % 255, rand() % 255);
-    shapes.push_back(shape);
-  }
+    while(true) {
+        // detect if the A button is pressed (could be A, B, X, or Y)
+        if(button_a.raw()) {
+            // make the led glow green
+            // parameters are red, green, blue all between 0 and 255
+            // these are also gamma corrected
+            led.set_rgb(0, 255, 0);
+        }
 
-  uint32_t i = 0;
-  Pen BG = graphics.create_pen(120, 40, 60);
-  Pen YELLOW = graphics.create_pen(255, 255, 0);
-  Pen TEAL = graphics.create_pen(0, 255, 255);
-  Pen WHITE = graphics.create_pen(255, 255, 255);
+        // set the colour of the pen
+        // parameters are red, green, blue all between 0 and 255
+        graphics.set_pen(30, 40, 50);
 
-  while(true) {
-    graphics.set_pen(BG);
-    graphics.clear();
+        // fill the screen with the current pen colour
+        graphics.clear();
 
-    for(auto &shape : shapes) {
-      shape.x += shape.dx;
-      shape.y += shape.dy;
-      if(shape.x < 0) shape.dx *= -1;
-      if(shape.x >= graphics.bounds.w) shape.dx *= -1;
-      if(shape.y < 0) shape.dy *= -1;
-      if(shape.y >= graphics.bounds.h) shape.dy *= -1;
+        // draw a box to put some text in
+        graphics.set_pen(10, 20, 30);
+        Rect text_rect(10, 10, 150, 150);
+        graphics.rectangle(text_rect);
 
-      graphics.set_pen(shape.pen);
-      graphics.circle(Point(shape.x, shape.y), shape.r);
+        // write some text inside the box with 10 pixels of margin
+        // automatically word wrapping
+        text_rect.deflate(10);
+        graphics.set_pen(110, 120, 130);
+        graphics.text("This is a message", Point(text_rect.x, text_rect.y), text_rect.w);
+
+        // now we've done our drawing let's update the screen
+        st7789.update(&graphics);
     }
-
-    float led_step = fmod(i / 20.0f, M_PI * 2.0f);
-    int r = (sin(led_step) * 32.0f) + 32.0f;
-    led.set_rgb(r, r / 1.2f, r);
-
-
-    std::vector<Point> poly;
-    poly.push_back(Point(30, 30));
-    poly.push_back(Point(50, 35));
-    poly.push_back(Point(70, 25));
-    poly.push_back(Point(80, 65));
-    poly.push_back(Point(50, 85));
-    poly.push_back(Point(30, 45));
-
-    graphics.set_pen(YELLOW);
-    //pico_display.pixel(Point(0, 0));
-    graphics.polygon(poly);
-
-    graphics.set_pen(TEAL);
-    graphics.triangle(Point(50, 50), Point(130, 80), Point(80, 110));
-
-    graphics.set_pen(WHITE);
-    graphics.line(Point(50, 50), Point(120, 80));
-    graphics.line(Point(20, 20), Point(120, 20));
-    graphics.line(Point(20, 20), Point(20, 120));
-
-    for(int r = 0; r < 30; r++) {
-      for(int j = 0; j < 10; j++) {
-        float rads = ((M_PI * 2) / 30.0f) * float(r);
-        rads += (float(i) / 100.0f);
-        rads += (float(j) / 100.0f);
-        float cx = sin(rads) * 300.0f;
-        float cy = cos(rads) * 300.0f;
-        graphics.line(Point(120, 67), Point(cx + 120, cy + 67));
-      }
-    }
-
-    // update screen
-    st7789.update(&graphics);
-    sleep_ms(1000 / 60);
-    i++;
-  }
-
-    return 0;
 }

@@ -86,7 +86,6 @@ add_subdirectory(libraries)
 add_executable(
     PicoPassSW
     PicoPassSW.cpp
-    image_data.cpp
 )
 
 target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789)
