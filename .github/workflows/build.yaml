@@ -6,7 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      PICO_SDK_FETCH_FROM_GIT: "TRUE"
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
