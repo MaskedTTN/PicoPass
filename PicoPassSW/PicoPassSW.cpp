@@ -47,7 +47,7 @@ void draw_login(const Login &login) {
 
     graphics.text("User: " + login.username, Point(10, 60), 200);
 
-    graphics.text("A: Next  X: Prev", Point(10, 120), 200);
+    graphics.text("A: Prev  X: Next", Point(10, 120), 200);
 
     st7789.update(&graphics);
 }
@@ -56,13 +56,13 @@ void menu () {
     int curr_login_index = 0;
     draw_login(logins[curr_login_index]);
     while (true){
-        if (button_a.raw()){
+        if (button_x.raw()){
             curr_login_index = (curr_login_index + 1) % logins.size();
             draw_login(logins[curr_login_index]);
             sleep_ms(300); //debounce
         }
 
-        if (button_x.raw()){
+        if (button_a.raw()){
             curr_login_index = (curr_login_index - 1) % logins.size();
             draw_login(logins[curr_login_index]);
             sleep_ms(300); //debounce
