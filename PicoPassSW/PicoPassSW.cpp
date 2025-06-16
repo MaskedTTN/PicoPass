@@ -3,6 +3,7 @@
 #include "libraries/pico_graphics/pico_graphics.hpp"
 #include "rgbled.hpp"
 #include "drivers/button/button.cpp"
+#include "picosha2.hpp"
 
 using namespace pimoroni;
 
@@ -21,41 +22,76 @@ Button button_b(PicoDisplay::B);
 Button button_x(PicoDisplay::X);
 Button button_y(PicoDisplay::Y);
 
+const std::string stored_hash = "f77f0ece0aa17656f081c581c06d2b216f5207570c69494f5c879659f03739bc";//"ABXY"
+std::string code = "";
+
+void draw_lockscreen_ui() {
+    graphics.set_pen(0, 0, 0);
+    graphics.clear();
+
+    graphics.set_pen(255, 255, 255);
+    graphics.text("Enter 4-letter code:", Point(10, 20), 200);
+
+    graphics.text(code, Point(10, 60), 200);
+
+    st7789.update(&graphics);
+}
+
+void draw_correct() {
+    graphics.set_pen(0, 0, 0);
+    graphics.clear();
+
+    graphics.set_pen(255, 255, 255);
+    graphics.text("pin verified", Point(10, 20), 200);
+
+    st7789.update(&graphics);
+}
+
+void draw_incorrect() {
+    graphics.set_pen(0, 0, 0);
+    graphics.clear();
+
+    graphics.set_pen(255, 255, 255);
+    graphics.text("pin incorrect", Point(10, 20), 200);
+
+    st7789.update(&graphics);
+}
 int main() {
 
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(100);
-
+    
+    
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
-        if(button_a.raw()) {
-            // make the led glow green
-            // parameters are red, green, blue all between 0 and 255
-            // these are also gamma corrected
-            led.set_rgb(0, 255, 0);
+        if(code.size() < 4) {
+            if(button_a.raw()) {
+                code += "A";
+                sleep_ms(300); // debounce
+            } else if(button_b.raw()) {
+                code += "B";
+                sleep_ms(300);
+            } else if(button_x.raw()) {
+                code += "X";
+                sleep_ms(300);
+            } else if(button_y.raw()) {
+                code += "Y";
+                sleep_ms(300);
+            }
+            draw_lockscreen_ui();
+        } else {
+            //validate 
+            std::vector<unsigned char> hash(picosha2::k_digest_size);
+            std::string input_hash = picosha2::hash256_hex_string(code);
+
+            // Compare hashes
+            if(input_hash == stored_hash) {
+                draw_correct();
+            } else {
+                draw_incorrect();
+            }
         }
-
-        // set the colour of the pen
-        // parameters are red, green, blue all between 0 and 255
-        graphics.set_pen(30, 40, 50);
-
-        // fill the screen with the current pen colour
-        graphics.clear();
-
-        // draw a box to put some text in
-        graphics.set_pen(10, 20, 30);
-        Rect text_rect(10, 10, 150, 150);
-        graphics.rectangle(text_rect);
-
-        // write some text inside the box with 10 pixels of margin
-        // automatically word wrapping
-        text_rect.deflate(10);
-        graphics.set_pen(110, 120, 130);
-        graphics.text("This is a message", Point(text_rect.x, text_rect.y), text_rect.w);
-
-        // now we've done our drawing let's update the screen
-        st7789.update(&graphics);
-    }
+    }   
 }
