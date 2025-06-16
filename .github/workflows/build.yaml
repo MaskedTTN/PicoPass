@@ -1,0 +1,30 @@
+name: Build SW image
+
+on:
+  push:  # Runs on every push to any branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create build directory
+        run: mkdir build
+
+      - name: Run CMake
+        working-directory: ./build
+        run: cmake ..
+
+      - name: Build with make
+        working-directory: ./build
+        run: make
+
+      - name: Upload UF2 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test.uf2
+          path: build/test.uf2
+
