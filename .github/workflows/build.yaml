@@ -8,8 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PICO_SDK_FETCH_FROM_GIT: "TRUE"
-      
+
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake gcc-arm-none-eabi build-essential
+          
       - name: Checkout repository
         uses: actions/checkout@v3
 
