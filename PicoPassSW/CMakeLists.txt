@@ -84,12 +84,12 @@ add_subdirectory(drivers)
 add_subdirectory(libraries)
 
 add_executable(
-    pico_display_demo
+    PicoPassSW
     PicoPassSW.cpp
     image_data.cpp
 )
 
-target_link_libraries(pico_display_demo pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789)
+target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789)
 
 # create map/bin/hex file etc.
-pico_add_extra_outputs(pico_display_demo)
+pico_add_extra_outputs(PicoPassSW)
