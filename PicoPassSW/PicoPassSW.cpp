@@ -42,7 +42,9 @@ struct Login {
 std::vector<Login> logins = {
     {"user1@example.com", "pass1234"},
     {"alice@example.com", "alicepwd"},
-    {"bob@example.com", "b0bpwd!"}
+    {"bob@example.com", "b0bpwd!"},
+    {"test1", "a"},
+    {"test2", "b"}
 };
 
 // Standard HID keyboard report descriptor
