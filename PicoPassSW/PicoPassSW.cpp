@@ -5,6 +5,11 @@
 #include "drivers/button/button.cpp"
 #include "picosha2.hpp"
 
+#include "bsp/board.h"
+#include "tusb.h"
+#include "class/hid/hid.h"
+#include "class/hid/hid_device.h"
+
 using namespace pimoroni;
 
 // Display driver
@@ -38,6 +43,137 @@ std::vector<Login> logins = {
     {"bob@example.com", "b0bpwd!"}
 };
 
+// Standard HID keyboard report descriptor
+uint8_t const desc_hid_report[] = {
+    TUD_HID_REPORT_DESC_KEYBOARD()
+};
+
+extern "C" uint8_t const* tud_descriptor_device_cb(void) {
+    static const tusb_desc_device_t desc = {
+        .bLength            = sizeof(tusb_desc_device_t),
+        .bDescriptorType    = TUSB_DESC_DEVICE,
+        .bcdUSB             = 0x0200,
+
+        .bDeviceClass       = TUSB_CLASS_MISC,
+        .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
+        .bDeviceProtocol    = MISC_PROTOCOL_IAD,
+        .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
+
+        .idVendor           = 0xCafe,
+        .idProduct          = 0x4000,
+        .bcdDevice          = 0x0100,
+
+        .iManufacturer      = 0x01,
+        .iProduct           = 0x02,
+        .iSerialNumber      = 0x03,
+
+        .bNumConfigurations = 1
+    };
+
+    return (uint8_t const*) &desc;
+}
+
+extern "C" const uint8_t* tud_descriptor_configuration_cb(uint8_t index) {
+    (void)index; // for single config
+
+    // total descriptor length
+    static const uint8_t desc_configuration[] = {
+        // Config descriptor
+        9, TUSB_DESC_CONFIGURATION,  // bLength, bDescriptorType
+        34, 0,  // wTotalLength (LSB, MSB)
+        1,     // bNumInterfaces
+        1,     // bConfigurationValue
+        0,     // iConfiguration
+        0x80,  // bmAttributes (Bus-powered)
+        50,    // bMaxPower (in 2mA units) = 100mA
+
+        // Interface descriptor (HID keyboard)
+        9, TUSB_DESC_INTERFACE,
+        0, 0, 1, TUSB_CLASS_HID, HID_SUBCLASS_BOOT, HID_ITF_PROTOCOL_KEYBOARD, 0,
+
+        // HID descriptor
+        9, HID_DESC_TYPE_HID,
+        0x11, 0x01,  // HID Class Spec release (1.11)
+        0, 1, HID_DESC_TYPE_REPORT, sizeof(desc_hid_report), 0,
+
+        // Endpoint descriptor (interrupt IN)
+        7, TUSB_DESC_ENDPOINT,
+        0x81, TUSB_XFER_INTERRUPT,
+        8, 0, 10
+    };
+
+    return desc_configuration;
+}
+
+extern "C" const uint16_t* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
+    static uint16_t desc_str[32];
+
+    const char* string_desc[] = {
+        (const char[]) { 0x09, 0x04 }, // 0: Supported language = English (0x0409)
+        "Masked Titan",               // 1: Manufacturer
+        "PicoPass",                   // 2: Product
+        "123456",                     // 3: Serial
+    };
+
+    uint8_t chr_count;
+    if (index == 0) {
+        desc_str[1] = 0x0409;
+        chr_count = 1;
+    } else {
+        const char* str = string_desc[index];
+        chr_count = strlen(str);
+        for (uint8_t i = 0; i < chr_count; i++) {
+            desc_str[1 + i] = str[i];
+        }
+    }
+
+    desc_str[0] = (TUSB_DESC_STRING << 8) | (2 * chr_count + 2);
+    return desc_str;
+}
+
+
+
+extern "C" const uint8_t* tud_hid_descriptor_report_cb(uint8_t instance) {
+    static const uint8_t desc_hid_report[] = {
+        TUD_HID_REPORT_DESC_KEYBOARD()
+    };
+    return desc_hid_report;
+}
+
+
+extern "C" uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id,
+    hid_report_type_t report_type,
+    uint8_t* buffer, uint16_t reqlen) {
+return 0; // No report to return
+}
+
+
+extern "C" void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
+    hid_report_type_t report_type,
+    const uint8_t* buffer, uint16_t bufsize) {
+// Ignored for now
+}
+
+
+
+void type_hi() {
+    if (!tud_hid_ready()) return;
+    //uint8_t empty[6] = {0,0,0,0,0,0};
+    uint8_t keys[6] = { HID_KEY_H, 0, 0, 0, 0, 0 };
+    tud_hid_keyboard_report(0, 0, keys);
+    sleep_ms(200);
+    tud_hid_keyboard_report(0, 0, NULL); // release
+    sleep_ms(200);
+
+    keys[0] = HID_KEY_I;
+    tud_hid_keyboard_report(0, 0, keys);
+    sleep_ms(200);
+    tud_hid_keyboard_report(0, 0, NULL); // release
+    sleep_ms(200);
+}
+
+
+
 void draw_login(const Login &login) {
     graphics.set_pen(0, 0, 0);
     graphics.clear();
@@ -53,9 +189,12 @@ void draw_login(const Login &login) {
 }
 
 void menu () {
+    board_init();
+    tusb_init();
     int curr_login_index = 0;
     draw_login(logins[curr_login_index]);
     while (true){
+        tud_task();
         if (button_x.raw()){
             curr_login_index = (curr_login_index + 1) % logins.size();
             draw_login(logins[curr_login_index]);
@@ -66,6 +205,11 @@ void menu () {
             curr_login_index = (curr_login_index - 1) % logins.size();
             draw_login(logins[curr_login_index]);
             sleep_ms(300); //debounce
+        }
+
+        if (button_y.raw()){
+            type_hi();
+            sleep_ms(900);
         }
     }
 }
@@ -104,7 +248,6 @@ void draw_incorrect() {
     st7789.update(&graphics);
 }
 int main() {
-
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.

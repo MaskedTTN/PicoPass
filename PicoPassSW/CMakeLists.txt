@@ -87,8 +87,10 @@ add_executable(
     PicoPassSW
     PicoPassSW.cpp
 )
-
-target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789)
+pico_enable_stdio_usb(PicoPassSW 1)
+pico_enable_stdio_uart(PicoPassSW 0)
+target_include_directories(PicoPassSW PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789 tinyusb_device tinyusb_board)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(PicoPassSW)
