@@ -178,7 +178,45 @@ void type_hi() {
     tud_task();
 }
 
+uint8_t char_to_hid(char c, uint8_t* modifier) {
+    *modifier = 0;
 
+    if (c >= 'a' && c <= 'z') return HID_KEY_A + (c - 'a');
+    if (c >= 'A' && c <= 'Z') {
+        *modifier = KEYBOARD_MODIFIER_LEFTSHIFT;
+        return HID_KEY_A + (c - 'A');
+    }
+    if (c >= '0' && c <= '9') return HID_KEY_0 + (c - '0');
+    if (c == ' ') return HID_KEY_SPACE;
+    if (c == '\n') return HID_KEY_ENTER;
+
+    // Add more symbols as needed (e.g., punctuation, special chars)
+    return 0;
+}
+
+void type_password(const Login &login){
+    std::string password = login.password;
+    graphics.text("User: " + login.username, Point(10, 80), 200);
+    for (char c : password) {
+        while (!tud_hid_ready()){
+            sleep_ms(1);
+        }
+
+        uint8_t modifier = 0;
+        uint8_t keycode = char_to_hid(c, &modifier);
+
+        if (keycode){
+            tud_hid_keyboard_report(0, modifier, &keycode);
+            tud_task();
+            sleep_ms(40);
+            tud_hid_keyboard_report(0, 0, NULL);
+            tud_task();
+            sleep_ms(40);
+        }
+    }
+    tud_hid_keyboard_report(0, 0, NULL);
+    tud_task();
+}
 
 void draw_login(const Login &login) {
     graphics.set_pen(0, 0, 0);
@@ -214,8 +252,10 @@ void menu () {
         }
 
         if (button_y.raw()){
-            type_hi();
-            sleep_ms(900);
+            //type_hi();
+            type_password(logins[curr_login_index]);
+            sleep_ms(2000);
+            
         }
     }
 }
