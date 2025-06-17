@@ -159,17 +159,23 @@ extern "C" void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
 void type_hi() {
     if (!tud_hid_ready()) return;
     //uint8_t empty[6] = {0,0,0,0,0,0};
-    uint8_t keys[6] = { HID_KEY_H, 0, 0, 0, 0, 0 };
-    tud_hid_keyboard_report(0, 0, keys);
+    //uint8_t keys[6] = { HID_KEY_H, 0, 0, 0, 0, 0 };
+    uint8_t keycode[6] = {0};
+    keycode[0] = HID_KEY_A;
+    tud_hid_keyboard_report(0, 0, keycode);
     sleep_ms(200);
+    tud_task();
     tud_hid_keyboard_report(0, 0, NULL); // release
     sleep_ms(200);
-
-    keys[0] = HID_KEY_I;
-    tud_hid_keyboard_report(0, 0, keys);
+    tud_task();
+    keycode[0] = HID_KEY_B;
+    //keys[0] = HID_KEY_I;
+    tud_hid_keyboard_report(0, 0, keycode);
     sleep_ms(200);
+    tud_task();
     tud_hid_keyboard_report(0, 0, NULL); // release
     sleep_ms(200);
+    tud_task();
 }
 
 
