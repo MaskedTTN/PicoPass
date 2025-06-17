@@ -41,10 +41,11 @@ struct Login {
 // Example logins
 std::vector<Login> logins = {
     {"user1@example.com", "pass1234"},
+    {"test1", "appple"},
+    {"test2", "ab"},
     {"alice@example.com", "alicepwd"},
     {"bob@example.com", "b0bpwd!"},
-    {"test1", "a"},
-    {"test2", "b"}
+    {"test3", "ba"}
 };
 
 // Standard HID keyboard report descriptor
@@ -198,112 +199,75 @@ void type_hi() {
     return 0;
 } */
 
-bool char_to_hid(char c, uint8_t& modifier, uint8_t& keycode) {
+bool char_to_hid(char c, uint8_t &modifier, uint8_t &keycode) {
     modifier = 0;
 
-    static const std::map<char, std::pair<uint8_t, uint8_t>> keymap = {
-        // Lowercase letters
-        {'a', {0, HID_KEY_A}}, {'b', {0, HID_KEY_B}}, {'c', {0, HID_KEY_C}},
-        {'d', {0, HID_KEY_D}}, {'e', {0, HID_KEY_E}}, {'f', {0, HID_KEY_F}},
-        {'g', {0, HID_KEY_G}}, {'h', {0, HID_KEY_H}}, {'i', {0, HID_KEY_I}},
-        {'j', {0, HID_KEY_J}}, {'k', {0, HID_KEY_K}}, {'l', {0, HID_KEY_L}},
-        {'m', {0, HID_KEY_M}}, {'n', {0, HID_KEY_N}}, {'o', {0, HID_KEY_O}},
-        {'p', {0, HID_KEY_P}}, {'q', {0, HID_KEY_Q}}, {'r', {0, HID_KEY_R}},
-        {'s', {0, HID_KEY_S}}, {'t', {0, HID_KEY_T}}, {'u', {0, HID_KEY_U}},
-        {'v', {0, HID_KEY_V}}, {'w', {0, HID_KEY_W}}, {'x', {0, HID_KEY_X}},
-        {'y', {0, HID_KEY_Y}}, {'z', {0, HID_KEY_Z}},
-
-        // Uppercase letters (shift)
-        {'A', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_A}},
-        {'B', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_B}},
-        {'C', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_C}},
-        {'D', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_D}},
-        {'E', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_E}},
-        {'F', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_F}},
-        {'G', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_G}},
-        {'H', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_H}},
-        {'I', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_I}},
-        {'J', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_J}},
-        {'K', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_K}},
-        {'L', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_L}},
-        {'M', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_M}},
-        {'N', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_N}},
-        {'O', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_O}},
-        {'P', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_P}},
-        {'Q', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Q}},
-        {'R', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_R}},
-        {'S', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_S}},
-        {'T', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_T}},
-        {'U', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_U}},
-        {'V', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_V}},
-        {'W', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_W}},
-        {'X', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_X}},
-        {'Y', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Y}},
-        {'Z', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Z}},
-
-        // Numbers and their shifted symbols
-        {'1', {0, HID_KEY_1}}, {'!', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_1}},
-        {'2', {0, HID_KEY_2}}, {'@', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_2}},
-        {'3', {0, HID_KEY_3}}, {'#', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_3}},
-        {'4', {0, HID_KEY_4}}, {'$', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_4}},
-        {'5', {0, HID_KEY_5}}, {'%', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_5}},
-        {'6', {0, HID_KEY_6}}, {'^', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_6}},
-        {'7', {0, HID_KEY_7}}, {'&', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_7}},
-        {'8', {0, HID_KEY_8}}, {'*', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_8}},
-        {'9', {0, HID_KEY_9}}, {'(', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_9}},
-        {'0', {0, HID_KEY_0}}, {')', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_0}},
-
-        // Punctuation and space
-        {' ', {0, HID_KEY_SPACE}},
-        {'\n', {0, HID_KEY_ENTER}},
-        {'\t', {0, HID_KEY_TAB}},
-        {'-', {0, HID_KEY_MINUS}}, {'_', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_MINUS}},
-        {'=', {0, HID_KEY_EQUAL}}, {'+', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_EQUAL}},
-        {'[', {0, HID_KEY_BRACKET_LEFT}}, {'{', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BRACKET_LEFT}},
-        {']', {0, HID_KEY_BRACKET_RIGHT}}, {'}', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BRACKET_RIGHT}},
-        {'\\',{0, HID_KEY_BACKSLASH}}, {'|', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BACKSLASH}},
-        {';', {0, HID_KEY_SEMICOLON}}, {':', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_SEMICOLON}},
-        {'\'',{0, HID_KEY_APOSTROPHE}}, {'"', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_APOSTROPHE}},
-        {',', {0, HID_KEY_COMMA}}, {'<', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_COMMA}},
-        {'.', {0, HID_KEY_PERIOD}}, {'>', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_PERIOD}},
-        {'/', {0, HID_KEY_SLASH}}, {'?', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_SLASH}},
-        {'`', {0, HID_KEY_GRAVE}}, {'~', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_GRAVE}},
-    };
-
-    auto it = keymap.find(c);
-    if (it != keymap.end()) {
-        modifier = it->second.first;
-        keycode = it->second.second;
-        return true;
+    if (c >= 'a' && c <= 'z') {
+        keycode = HID_KEY_A + (c - 'a');
+    } else if (c >= 'A' && c <= 'Z') {
+        modifier = KEYBOARD_MODIFIER_LEFTSHIFT;
+        keycode = HID_KEY_A + (c - 'A');
+    } else if (c >= '1' && c <= '9') {
+        keycode = HID_KEY_1 + (c - '1'); // No Shift!
+    } else if (c == '0') {
+        keycode = HID_KEY_0;
+    } else if (c == '!') {
+        modifier = KEYBOARD_MODIFIER_LEFTSHIFT;
+        keycode = HID_KEY_1;
+    } else if (c == '@') {
+        modifier = KEYBOARD_MODIFIER_LEFTSHIFT;
+        keycode = HID_KEY_2;
+    } else if (c == '.') {
+        keycode = HID_KEY_PERIOD;
+    } else if (c == '\t') {
+        keycode = HID_KEY_TAB;
+    } else if (c == '\n' || c == '\r') {
+        keycode = HID_KEY_ENTER;
+    } else {
+        return false; // unsupported char
     }
 
-    return false;
+    return true;
 }
+
+
 
 
 void type_password(const Login &login){
     std::string password = login.password;
     graphics.text("User: " + login.username, Point(10, 80), 200);
+
+    uint8_t keys[6] = {0};
+
     for (char c : password) {
-        while (!tud_hid_ready()){
+        while (!tud_hid_ready()) {
             sleep_ms(1);
         }
 
         uint8_t modifier = 0;
-        uint8_t keycode = 0;//char_to_hid(c, &modifier);
+        uint8_t keycode = 0;
 
-        if (char_to_hid(c, modifier, keycode)){
-            tud_hid_keyboard_report(0, modifier, &keycode);
+        if (char_to_hid(c, modifier, keycode)) {
+            // Press key
+            keys[0] = keycode;
+            tud_hid_keyboard_report(0, modifier, keys);
             tud_task();
-            sleep_ms(40);
-            tud_hid_keyboard_report(0, 0, NULL);
-            tud_task();
-            sleep_ms(40);
+            sleep_ms(100);
         }
+            // Release key
+            keys[0] = 0;
+            tud_hid_keyboard_report(0, 0, keys);
+            tud_task();
+            sleep_ms(100);
     }
-    tud_hid_keyboard_report(0, 0, NULL);
+
+    // Final release (ensure nothing is left pressed)
+    memset(keys, 0, sizeof(keys));
+    tud_hid_keyboard_report(0, 0, keys);
     tud_task();
 }
+
+
 
 void draw_login(const Login &login) {
     graphics.set_pen(0, 0, 0);
@@ -312,7 +276,7 @@ void draw_login(const Login &login) {
     graphics.set_pen(255, 255, 255);
     graphics.text("Select Login:", Point(10, 20), 200);
 
-    graphics.text("User: " + login.username, Point(10, 60), 200);
+    graphics.text("User: " + login.password, Point(10, 60), 200);
 
     graphics.text("A: Prev  X: Next", Point(10, 120), 200);
 
