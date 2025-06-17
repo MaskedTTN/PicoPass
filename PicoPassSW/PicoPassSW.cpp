@@ -1,3 +1,5 @@
+#include <map>
+
 #include "pico_display.hpp"
 #include "drivers/st7789/st7789.hpp"
 #include "libraries/pico_graphics/pico_graphics.hpp"
@@ -178,7 +180,7 @@ void type_hi() {
     tud_task();
 }
 
-uint8_t char_to_hid(char c, uint8_t* modifier) {
+/* uint8_t char_to_hid(char c, uint8_t* modifier) {
     *modifier = 0;
 
     if (c >= 'a' && c <= 'z') return HID_KEY_A + (c - 'a');
@@ -192,7 +194,90 @@ uint8_t char_to_hid(char c, uint8_t* modifier) {
 
     // Add more symbols as needed (e.g., punctuation, special chars)
     return 0;
+} */
+
+bool char_to_hid(char c, uint8_t& modifier, uint8_t& keycode) {
+    modifier = 0;
+
+    static const std::map<char, std::pair<uint8_t, uint8_t>> keymap = {
+        // Lowercase letters
+        {'a', {0, HID_KEY_A}}, {'b', {0, HID_KEY_B}}, {'c', {0, HID_KEY_C}},
+        {'d', {0, HID_KEY_D}}, {'e', {0, HID_KEY_E}}, {'f', {0, HID_KEY_F}},
+        {'g', {0, HID_KEY_G}}, {'h', {0, HID_KEY_H}}, {'i', {0, HID_KEY_I}},
+        {'j', {0, HID_KEY_J}}, {'k', {0, HID_KEY_K}}, {'l', {0, HID_KEY_L}},
+        {'m', {0, HID_KEY_M}}, {'n', {0, HID_KEY_N}}, {'o', {0, HID_KEY_O}},
+        {'p', {0, HID_KEY_P}}, {'q', {0, HID_KEY_Q}}, {'r', {0, HID_KEY_R}},
+        {'s', {0, HID_KEY_S}}, {'t', {0, HID_KEY_T}}, {'u', {0, HID_KEY_U}},
+        {'v', {0, HID_KEY_V}}, {'w', {0, HID_KEY_W}}, {'x', {0, HID_KEY_X}},
+        {'y', {0, HID_KEY_Y}}, {'z', {0, HID_KEY_Z}},
+
+        // Uppercase letters (shift)
+        {'A', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_A}},
+        {'B', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_B}},
+        {'C', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_C}},
+        {'D', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_D}},
+        {'E', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_E}},
+        {'F', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_F}},
+        {'G', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_G}},
+        {'H', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_H}},
+        {'I', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_I}},
+        {'J', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_J}},
+        {'K', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_K}},
+        {'L', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_L}},
+        {'M', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_M}},
+        {'N', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_N}},
+        {'O', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_O}},
+        {'P', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_P}},
+        {'Q', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Q}},
+        {'R', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_R}},
+        {'S', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_S}},
+        {'T', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_T}},
+        {'U', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_U}},
+        {'V', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_V}},
+        {'W', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_W}},
+        {'X', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_X}},
+        {'Y', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Y}},
+        {'Z', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_Z}},
+
+        // Numbers and their shifted symbols
+        {'1', {0, HID_KEY_1}}, {'!', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_1}},
+        {'2', {0, HID_KEY_2}}, {'@', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_2}},
+        {'3', {0, HID_KEY_3}}, {'#', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_3}},
+        {'4', {0, HID_KEY_4}}, {'$', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_4}},
+        {'5', {0, HID_KEY_5}}, {'%', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_5}},
+        {'6', {0, HID_KEY_6}}, {'^', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_6}},
+        {'7', {0, HID_KEY_7}}, {'&', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_7}},
+        {'8', {0, HID_KEY_8}}, {'*', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_8}},
+        {'9', {0, HID_KEY_9}}, {'(', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_9}},
+        {'0', {0, HID_KEY_0}}, {')', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_0}},
+
+        // Punctuation and space
+        {' ', {0, HID_KEY_SPACE}},
+        {'\n', {0, HID_KEY_ENTER}},
+        {'\t', {0, HID_KEY_TAB}},
+        {'-', {0, HID_KEY_MINUS}}, {'_', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_MINUS}},
+        {'=', {0, HID_KEY_EQUAL}}, {'+', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_EQUAL}},
+        {'[', {0, HID_KEY_BRACKET_LEFT}}, {'{', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BRACKET_LEFT}},
+        {']', {0, HID_KEY_BRACKET_RIGHT}}, {'}', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BRACKET_RIGHT}},
+        {'\\',{0, HID_KEY_BACKSLASH}}, {'|', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_BACKSLASH}},
+        {';', {0, HID_KEY_SEMICOLON}}, {':', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_SEMICOLON}},
+        {'\'',{0, HID_KEY_APOSTROPHE}}, {'"', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_APOSTROPHE}},
+        {',', {0, HID_KEY_COMMA}}, {'<', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_COMMA}},
+        {'.', {0, HID_KEY_PERIOD}}, {'>', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_PERIOD}},
+        {'/', {0, HID_KEY_SLASH}}, {'?', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_SLASH}},
+        {'`', {0, HID_KEY_GRAVE}}, {'~', {KEYBOARD_MODIFIER_LEFTSHIFT, HID_KEY_GRAVE}},
+    };
+
+    auto it = keymap.find(c);
+    if (it != keymap.end()) {
+        modifier = it->second.first;
+        keycode = it->second.second;
+        return true;
+    }
+
+    return false;
 }
+
 
 void type_password(const Login &login){
     std::string password = login.password;
@@ -203,9 +288,9 @@ void type_password(const Login &login){
         }
 
         uint8_t modifier = 0;
-        uint8_t keycode = char_to_hid(c, &modifier);
+        uint8_t keycode = 0;//char_to_hid(c, &modifier);
 
-        if (keycode){
+        if (char_to_hid(c, modifier, keycode)){
             tud_hid_keyboard_report(0, modifier, &keycode);
             tud_task();
             sleep_ms(40);
