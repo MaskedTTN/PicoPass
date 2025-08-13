@@ -6,9 +6,6 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Initialise pico_sdk from installed location
-# (note this can come from environment, CMake cache etc)
-
 # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
 if(WIN32)
     set(USERHOME $ENV{USERPROFILE})
@@ -23,6 +20,7 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
+
 set(PICO_BOARD pico CACHE STRING "Board type")
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
@@ -57,40 +55,44 @@ include_directories(
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
-# Add executable. Default name is the project name, version 0.1
-
-#add_executable(PicoPassSW PicoPassSW.cpp )
-
-#pico_set_program_name(PicoPassSW "PicoPassSW")
-#pico_set_program_version(PicoPassSW "0.1")
-
-# Modify the below lines to enable/disable output over UART/USB
-#pico_enable_stdio_uart(PicoPassSW 0)
-#pico_enable_stdio_usb(PicoPassSW 0)
-
-# Add the standard library to the build
-#target_link_libraries(PicoPassSW
-##        pico_stdlib)
-
-# Add the standard include files to the build
-#target_include_directories(PicoPassSW PRIVATE
-#        ${CMAKE_CURRENT_LIST_DIR}
-#)
-
-#pico_add_extra_outputs(PicoPassSW)
 
 add_subdirectory(common)
 add_subdirectory(drivers)
 add_subdirectory(libraries)
 
+# ---- Main target ----
 add_executable(
     PicoPassSW
     PicoPassSW.cpp
+    secure_store.cpp     # <-- compile into the app
+    flash_store.cpp      # <-- compile into the app
 )
+
 pico_enable_stdio_usb(PicoPassSW 1)
 pico_enable_stdio_uart(PicoPassSW 0)
+
 target_include_directories(PicoPassSW PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789 tinyusb_device tinyusb_board)
+
+target_link_libraries(PicoPassSW
+    pico_stdlib
+    hardware_spi
+    hardware_pwm
+    hardware_dma
+    hardware_flash       # <-- needed by flash_store.cpp
+    hardware_sync
+    rgbled
+    pico_display
+    pico_graphics
+    st7789
+    tinyusb_device
+    tinyusb_board
+)
+
+# Flash geometry / reserved region for encrypted blob
+target_compile_definitions(PicoPassSW PRIVATE
+    PICO_FLASH_SIZE_BYTES=2097152
+    FLASH_STORE_SIZE=65536
+)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(PicoPassSW)
