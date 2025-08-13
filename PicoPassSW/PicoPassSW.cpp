@@ -13,6 +13,14 @@
 #include "class/hid/hid.h"
 #include "class/hid/hid_device.h"
 
+#include "pico/stdlib.h" // USB CDC stdio
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+
 using namespace pimoroni;
 
 // Display driver
@@ -40,6 +48,187 @@ std::string code = "";
 };
  */
 std::vector<Login> logins;
+
+static std::string master_pass = "ABXY"; // TODO: replace with your PIN-derived value later
+
+static void cli_print(const char *s) { printf("%s", s); }
+static void cli_println(const char *s) { printf("%s\r\n", s); }
+static void cli_prompt() { printf("PicoPass> "); }
+
+static std::vector<std::string> cli_tokenize(const std::string &line)
+{
+    std::vector<std::string> out;
+    std::string cur;
+    bool inq = false;
+    for (char c : line)
+    {
+        if (c == '"')
+        {
+            inq = !inq;
+            continue;
+        }
+        if (!inq && (c == ' ' || c == '\t'))
+        {
+            if (!cur.empty())
+            {
+                out.push_back(cur);
+                cur.clear();
+            }
+        }
+        else if (c != '\r' && c != '\n')
+        {
+            cur.push_back(c);
+        }
+    }
+    if (!cur.empty())
+        out.push_back(cur);
+    return out;
+}
+
+static void cli_help()
+{
+    cli_println("Commands:");
+    cli_println("  HELP                         - show this help");
+    cli_println("  LIST                         - list stored entries");
+    cli_println("  GET <idx>                    - show username & password at index");
+    cli_println("  ADD \"user\" \"pass\"          - add a new entry (use quotes)");
+    cli_println("  DEL <idx>                    - delete entry at index");
+    cli_println("  CLEAR                        - delete ALL entries");
+    cli_println("  SAVE                         - encrypt & save to flash");
+    cli_println("  LOAD                         - load & decrypt from flash");
+    cli_println("  SETPASS \"newmaster\"         - set master password (RAM only)");
+}
+
+static void cli_handle_line(const std::string &line)
+{
+    auto t = cli_tokenize(line);
+    if (t.empty())
+        return;
+    std::string cmd = t[0];
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
+
+    if (cmd == "HELP")
+    {
+        cli_help();
+    }
+    else if (cmd == "LIST")
+    {
+        printf("Entries: %zu\r\n", (size_t)logins.size());
+        for (size_t i = 0; i < logins.size(); ++i)
+        {
+            printf("  [%u] %s (len=%zu)\r\n", (unsigned)i, logins[i].username.c_str(), logins[i].password.size());
+        }
+    }
+    else if (cmd == "GET")
+    {
+        if (t.size() < 2)
+        {
+            cli_println("ERR: usage GET <idx>");
+            return;
+        }
+        int idx = atoi(t[1].c_str());
+        if (idx < 0 || (size_t)idx >= logins.size())
+        {
+            cli_println("ERR: index out of range");
+            return;
+        }
+        printf("[%d] user=\"%s\" pass=\"%s\"\r\n", idx, logins[idx].username.c_str(), logins[idx].password.c_str());
+    }
+    else if (cmd == "ADD")
+    {
+        if (t.size() < 3)
+        {
+            cli_println("ERR: usage ADD \"user\" \"pass\"");
+            return;
+        }
+        logins.push_back(Login{t[1], t[2]});
+        cli_println("OK: added");
+    }
+    else if (cmd == "DEL")
+    {
+        if (t.size() < 2)
+        {
+            cli_println("ERR: usage DEL <idx>");
+            return;
+        }
+        int idx = atoi(t[1].c_str());
+        if (idx < 0 || (size_t)idx >= logins.size())
+        {
+            cli_println("ERR: index out of range");
+            return;
+        }
+        logins.erase(logins.begin() + idx);
+        cli_println("OK: deleted");
+    }
+    else if (cmd == "CLEAR")
+    {
+        logins.clear();
+        cli_println("OK: cleared");
+    }
+    else if (cmd == "SAVE")
+    {
+        if (secure_store::save(master_pass, logins))
+            cli_println("OK: saved");
+        else
+            cli_println("ERR: save failed");
+    }
+    else if (cmd == "LOAD")
+    {
+        std::vector<Login> tmp;
+        if (secure_store::load(master_pass, tmp))
+        {
+            logins = tmp;
+            cli_println("OK: loaded");
+        }
+        else
+            cli_println("ERR: load failed (bad master or empty)");
+    }
+    else if (cmd == "SETPASS")
+    {
+        if (t.size() < 2)
+        {
+            cli_println("ERR: usage SETPASS \"newmaster\"");
+            return;
+        }
+        master_pass = t[1];
+        cli_println("OK: master set (RAM only)");
+    }
+    else
+    {
+        cli_println("ERR: unknown command. Try HELP.");
+    }
+}
+
+static void cli_poll()
+{
+    static std::string buf;
+    int ch;
+    while ((ch = getchar_timeout_us(0)) != PICO_ERROR_TIMEOUT)
+    {
+        if (ch == '\r' || ch == '\n')
+        {
+            if (!buf.empty())
+            {
+                cli_handle_line(buf);
+                buf.clear();
+                cli_prompt();
+            }
+        }
+        else if (ch == 8 || ch == 127)
+        {
+            if (!buf.empty())
+            {
+                buf.pop_back();
+                printf("\b \b");
+            }
+        }
+        else if (isprint(ch))
+        {
+            buf.push_back((char)ch);
+            putchar(ch);
+        }
+    }
+}
 
 // Standard HID keyboard report descriptor
 uint8_t const desc_hid_report[] = {
@@ -366,6 +555,25 @@ void draw_incorrect()
 }
 int main()
 {
+    // USB-serial ready for CLI
+    stdio_init_all();
+    sleep_ms(200);
+    cli_println("\r\nPicoPass serial ready. Type HELP.");
+    cli_prompt();
+
+    // Try to load stored logins from flash at boot
+    {
+        std::vector<Login> tmp;
+        if (secure_store::load(master_pass, tmp))
+        {
+            logins = tmp;
+            cli_println("Loaded logins from flash.");
+        }
+        else
+        {
+            cli_println("No stored data or wrong master. Using defaults until SAVE.");
+        }
+    }
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
@@ -373,6 +581,7 @@ int main()
 
     while (true)
     {
+        cli_poll();
         // detect if the A button is pressed (could be A, B, X, or Y)
         if (code.size() < 4)
         {
