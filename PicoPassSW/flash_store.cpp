@@ -1,5 +1,6 @@
 #include "flash_store.hpp"
 #include "hardware/flash.h"
+#include "hardware/sync.h"
 #include "pico/stdlib.h"
 #include <cstring>
 #include <algorithm>

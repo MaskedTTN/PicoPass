@@ -79,6 +79,7 @@ target_link_libraries(PicoPassSW
     hardware_pwm
     hardware_dma
     hardware_flash       # <-- needed by flash_store.cpp
+    hardware_sync
     rgbled
     pico_display
     pico_graphics
