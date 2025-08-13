@@ -90,7 +90,19 @@ add_executable(
 pico_enable_stdio_usb(PicoPassSW 1)
 pico_enable_stdio_uart(PicoPassSW 0)
 target_include_directories(PicoPassSW PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789 tinyusb_device tinyusb_board)
+target_link_libraries(PicoPassSW pico_stdlib hardware_spi hardware_pwm hardware_dma rgbled pico_display pico_graphics st7789 tinyusb_device tinyusb_board secure_store flash_store hardware_flash)
+
+target_compile_definitions(PicoPassSW PRIVATE
+    PICO_FLASH_SIZE_BYTES=2097152
+    FLASH_STORE_SIZE=65536
+)
+add_library(secure_store secure_store.cpp)
+target_include_directories(secure_store PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+
+add_library(flash_store flash_store.cpp)
+target_include_directories(flash_store PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(PicoPassSW)
+
