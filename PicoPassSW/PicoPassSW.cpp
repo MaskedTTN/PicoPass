@@ -33,7 +33,6 @@ Button button_y(PicoDisplay::Y);
 const std::string stored_hash = "f77f0ece0aa17656f081c581c06d2b216f5207570c69494f5c879659f03739bc"; //"ABXY"
 std::string code = "";
 
-// Struct for login info
 struct Login
 {
     std::string username;
@@ -41,16 +40,6 @@ struct Login
 };
 
 std::vector<Login> logins;
-
-/* // Example logins
-std::vector<Login> logins = {
-    {"user1@example.com", "pass1234"},
-    {"test1", "appple"},
-    {"test2", "ab"},
-    {"alice@example.com", "alicepwd"},
-    {"bob@example.com", "b0bpwd!"},
-    {"test3", "ba"}
-}; */
 
 // Standard HID keyboard report descriptor
 uint8_t const desc_hid_report[] = {

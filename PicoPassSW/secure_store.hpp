@@ -3,12 +3,12 @@
 #include <string>
 #include <stdint.h>
 
-// A simple credential record
+/* // A simple credential record
 struct Login
 {
     std::string username;
     std::string password;
-};
+}; */
 
 namespace secure_store
 {
