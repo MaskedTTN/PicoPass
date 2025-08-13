@@ -51,7 +51,7 @@ std::vector<Login> logins;
 
 static std::string master_pass = "ABXY"; // TODO: replace with your PIN-derived value later
 
-static void cli_print(const char *s) { printf("%s", s); }
+// static void cli_print(const char *s) { printf("%s", s); }
 static void cli_println(const char *s) { printf("%s\r\n", s); }
 static void cli_prompt() { printf("PicoPass> "); }
 
